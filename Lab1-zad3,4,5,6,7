@@ -1,0 +1,294 @@
+using System;
+using System.IO;
+using System.Text;
+class Program
+{
+    static void Main()
+    {
+        string path = @"C:\Intel\plik.txt";
+        try
+        {
+            // Otwarcie strumienia do zapisu do pliku (jeśli nie istnieje, zostanie utworzony) 
+            using (FileStream fs = new FileStream(path, FileMode.Create))
+            {
+                // Tworzenie ciągu znaków do zapisania 
+                string data = "Słońce powoli chowało się za horyzontem, malując niebo odcieniami pomarańczu i fioletu.\n" +
+                    "Lekki wiatr poruszał liśćmi drzew, tworząc delikatną melodię natury.\n" +
+                    "Na brzegu jeziora siedział starszy mężczyzna, wpatrując się w taflę wody.\n" +
+                    "Czas zdawał się zatrzymać, a świat wokół niego cichł.\n" +
+                    "W takich chwilach życie wydaje się proste, a każdy oddech nabiera głębszego znaczenia.";
+
+                // Konwersja ciągu znaków na tablicę bajtów w formacie UTF-8 
+                byte[] byteData = Encoding.UTF8.GetBytes(data);
+
+                // Zapis danych do pliku 
+                fs.Write(byteData, 0, byteData.Length);
+
+                Console.WriteLine("Dane zostały zapisane do pliku.");
+            }
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"Wystąpił błąd wejścia/wyjścia: {ex.Message}");
+        }
+    }
+}
+
+
+
+
+zadanie 3
+
+using System;
+using System.IO;
+
+class Program
+{
+    static void Main()
+    {
+        string path = @"C:\Intel\plik.txt";
+
+        using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+
+        // Odczyt z pliku za pomocą StreamReader 
+        using (StreamReader reader = new StreamReader(fs))
+        {
+            string content = reader.ReadToEnd();
+            Console.WriteLine(content);
+        }
+    }
+
+}
+
+
+
+Zasanie 4
+
+using System;
+using System.IO;
+using System.Reflection.PortableExecutable;
+
+class Program
+{
+    static void Main()
+    {
+        string path = @"C:\Intel\plik.txt";
+
+        using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+
+        using (StreamReader reader = new StreamReader(fs))
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null) // Odczytuj linie aż do końca pliku
+            {
+                string reversedLine = ReverseString(line);
+                Console.WriteLine(reversedLine);
+            }
+
+            static string ReverseString(string str)
+            {
+                char[] charArray = str.ToCharArray();
+                Array.Reverse(charArray);
+                return new string(charArray);
+            }
+        }
+    }
+}
+
+
+
+Zadanie 5
+
+
+
+using System;
+using System.IO;
+using System.Text;
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Wybierz opcję:");
+        Console.WriteLine("1 - Zapisz dane do pliku");
+        Console.WriteLine("2 - Odczytaj dane z pliku");
+
+        string wybor = Console.ReadLine();
+
+        if (wybor == "1")
+        {
+            ZapiszDoPliku();
+        }
+        else if (wybor == "2")
+        {
+            OdczytajZPliku();
+        }
+        else
+        {
+            Console.WriteLine("Niepoprawny wybór.");
+        }
+    }
+    static void ZapiszDoPliku()
+    {
+
+        Console.WriteLine("Wprowadź imię:");
+        string imie = Console.ReadLine();
+
+        Console.WriteLine("Wprowadź wiek:");
+        int wiek = int.Parse(Console.ReadLine());
+
+        Console.WriteLine("Wprowadź adres:");
+        string adres = Console.ReadLine();
+
+
+        string path = @"C:\Intel\dane.bin";
+
+        using (FileStream fs = new FileStream(path, FileMode.Create))
+        using (BinaryWriter writer = new BinaryWriter(fs))
+        {
+
+            writer.Write(imie);
+            writer.Write(wiek);
+            writer.Write(adres);
+        }
+
+        Console.WriteLine("Dane zostały zapisane do pliku.");
+    }
+
+    static void OdczytajZPliku()
+    {
+        string path = @"C:\Intel\dane.bin";
+
+
+        using (FileStream fs = new FileStream(path, FileMode.Open))
+        using (BinaryReader reader = new BinaryReader(fs))
+        {
+            string imie = reader.ReadString();
+            int wiek = reader.ReadInt32();
+            string adres = reader.ReadString();
+
+
+            Console.WriteLine("Imię: " + imie);
+            Console.WriteLine("Wiek: " + wiek);
+            Console.WriteLine("Adres: " + adres);
+        }
+    }
+}
+
+
+
+Zadanie 6
+
+
+using System;
+using System.IO;
+
+class Program
+{
+    static void Main()
+    {
+        string path = @"C:\Intel\plik.txt";
+        string plik = @"C:\Intel\zapisz.txt";
+        // Odczyt z pliku za pomocą StreamReader 
+        using (FileStream fa = new FileStream(plik, FileMode.Create))
+        using (StreamReader reader = new StreamReader(path))
+        using (StreamWriter writer = new StreamWriter(fa))
+        {
+            string content = reader.ReadToEnd();
+            writer.Write(content);
+        }
+        Console.WriteLine("Plik źródłowy został zapisany w nowym pliku.");
+    }
+}
+
+
+Zadanie 7
+
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+
+class Program
+{
+    static void Main()
+    {
+        string sourceFile = "sourceFile.bin";
+        string destinationFile1 = "destination1.bin";
+        string destinationFile2 = "destination2.bin";
+        string destinationFile3 = "destination3.bin";
+
+        // Krok 1: Generowanie pliku 300MB
+        Console.WriteLine("Generowanie pliku testowego...");
+        GenerateLargeFile(sourceFile, 300);
+
+        // Krok 2: Test kopiowania różnymi metodami
+        Console.WriteLine("\nTest kopiowania przy użyciu StreamReader & StreamWriter:");
+        MeasureExecutionTime(() => CopyUsingStreamReader(sourceFile, destinationFile1));
+
+        Console.WriteLine("\nTest kopiowania przy użyciu FileStream (blokowo):");
+        MeasureExecutionTime(() => CopyUsingFileStream(sourceFile, destinationFile2));
+
+        Console.WriteLine("\nTest kopiowania przy użyciu File.Copy():");
+        MeasureExecutionTime(() => File.Copy(sourceFile, destinationFile3, true));
+    }
+
+    /// <summary>
+    /// Generuje plik binarny o zadanej wielkości (MB).
+    /// </summary>
+    static void GenerateLargeFile(string filePath, int sizeInMB)
+    {
+        Random random = new Random();
+        byte[] buffer = new byte[1024 * 1024]; // 1 MB
+        using (FileStream fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+        {
+            for (int i = 0; i < sizeInMB; i++)
+            {
+                random.NextBytes(buffer);
+                fs.Write(buffer, 0, buffer.Length);
+            }
+        }
+        Console.WriteLine($"Plik {filePath} został utworzony ({sizeInMB} MB).");
+    }
+
+    /// <summary>
+    /// Kopiowanie pliku przy użyciu StreamReader & StreamWriter (niewydajna metoda dla plików binarnych).
+    /// </summary>
+    static void CopyUsingStreamReader(string source, string destination)
+    {
+        using (StreamReader reader = new StreamReader(source, Encoding.Default))
+        using (StreamWriter writer = new StreamWriter(destination, false, Encoding.Default))
+        {
+            string content = reader.ReadToEnd();
+            writer.Write(content);
+        }
+    }
+
+    /// <summary>
+    /// Kopiowanie pliku przy użyciu FileStream (blokowe kopiowanie danych).
+    /// </summary>
+    static void CopyUsingFileStream(string source, string destination)
+    {
+        byte[] buffer = new byte[4096]; // Bufor 4 KB
+        using (FileStream sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read))
+        using (FileStream destinationStream = new FileStream(destination, FileMode.Create, FileAccess.Write))
+        {
+            int bytesRead;
+            while ((bytesRead = sourceStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                destinationStream.Write(buffer, 0, bytesRead);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pomiar czasu wykonania metody.
+    /// </summary>
+    static void MeasureExecutionTime(Action action)
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        action();
+        stopwatch.Stop();
+        Console.WriteLine($"Czas wykonania: {stopwatch.ElapsedMilliseconds} ms");
+    }
+}
