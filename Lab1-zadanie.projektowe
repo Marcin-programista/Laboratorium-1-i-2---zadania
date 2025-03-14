@@ -1,0 +1,129 @@
+//Zadanie Projektowe
+
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+
+public class Zadanie
+{
+    public int Id { get; set; }  // Unikalny identyfikator zadania
+    public string Nazwa { get; set; }  // Nazwa zadania
+    public string Opis { get; set; }  // Szczegółowy opis zadania
+    public DateTime DataZakonczenia { get; set; }  // Termin zakończenia
+    public bool CzyWykonane { get; set; }  // Status wykonania
+
+    public Zadanie() { }
+
+    public Zadanie(int id, string nazwa, string opis, DateTime dataZakonczenia, bool czyWykonane)
+    {
+        Id = id;
+        Nazwa = nazwa;
+        Opis = opis;
+        DataZakonczenia = dataZakonczenia;
+        CzyWykonane = czyWykonane;
+    }
+
+    public void WyswietlInformacje()
+    {
+        Console.WriteLine($"ID: {Id}");
+        Console.WriteLine($"Nazwa: {Nazwa}");
+        Console.WriteLine($"Opis: {Opis}");
+        Console.WriteLine($"Data zakończenia: {DataZakonczenia:yyyy-MM-dd}");
+        Console.WriteLine($"Czy wykonane: {(CzyWykonane ? "Tak" : "Nie")}");
+    }
+}
+
+public class ManagerZadan
+{
+    private List<Zadanie> zadania = new List<Zadanie>();
+    private const string FileName = "zadania.json";
+
+    public void DodajZadanie(Zadanie zadanie)
+    {
+        zadania.Add(zadanie);
+    }
+
+    public void UsunZadanie(int id)
+    {
+        var zadanie = zadania.FirstOrDefault(z => z.Id == id);
+        if (zadanie != null)
+        {
+            zadania.Remove(zadanie);
+        }
+    }
+
+    public void WyswietlZadania()
+    {
+        foreach (var zadanie in zadania)
+        {
+            zadanie.WyswietlInformacje();
+            Console.WriteLine("------------------");
+        }
+    }
+
+    public void ZapiszDoPliku()
+    {
+        var json = JsonSerializer.Serialize(zadania, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(FileName, json);
+    }
+
+    public void WczytajZPliku()
+    {
+        if (File.Exists(FileName))
+        {
+            var json = File.ReadAllText(FileName);
+            zadania = JsonSerializer.Deserialize<List<Zadanie>>(json) ?? new List<Zadanie>();
+        }
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        ManagerZadan manager = new ManagerZadan();
+        manager.WczytajZPliku();
+
+        while (true)
+        {
+            Console.WriteLine("Wybierz opcję:");
+            Console.WriteLine("1. Dodaj zadanie");
+            Console.WriteLine("2. Usuń zadanie");
+            Console.WriteLine("3. Wyświetl zadania");
+            Console.WriteLine("4. Zapisz i wyjdź");
+
+            string wybor = Console.ReadLine();
+            switch (wybor)
+            {
+                case "1":
+                    Console.Write("Podaj ID: ");
+                    int id = int.Parse(Console.ReadLine());
+                    Console.Write("Podaj nazwę: ");
+                    string nazwa = Console.ReadLine();
+                    Console.Write("Podaj opis: ");
+                    string opis = Console.ReadLine();
+                    Console.Write("Podaj datę zakończenia (YYYY-MM-DD): ");
+                    DateTime dataZakonczenia = DateTime.Parse(Console.ReadLine());
+                    manager.DodajZadanie(new Zadanie(id, nazwa, opis, dataZakonczenia, false));
+                    break;
+                case "2":
+                    Console.Write("Podaj ID zadania do usunięcia: ");
+                    int idUsun = int.Parse(Console.ReadLine());
+                    manager.UsunZadanie(idUsun);
+                    break;
+                case "3":
+                    manager.WyswietlZadania();
+                    break;
+                case "4":
+                    manager.ZapiszDoPliku();
+                    return;
+                default:
+                    Console.WriteLine("Niepoprawny wybór. Spróbuj ponownie.");
+                    break;
+            }
+        }
+    }
+}
