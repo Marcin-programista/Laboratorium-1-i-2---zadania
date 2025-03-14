@@ -1,0 +1,73 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Diagnostics;
+
+//Zadanie 1 Laboratorium 2
+namespace KalkulatorDzielenia
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void btnOblicz_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Pobranie wartości z pól tekstowych
+                double dzielna = Convert.ToDouble(txtDzielna.Text);
+                double dzielnik = Convert.ToDouble(txtDzielnik.Text);
+
+                // Sprawdzenie dzielenia przez zero
+                if (dzielnik == 0)
+                {
+                    throw new DivideByZeroException("Próba dzielenia przez zero.");
+                }
+
+                // Wykonanie dzielenia
+                double wynik = dzielna / dzielnik;
+
+                // Wyświetlenie wyniku
+                txtWynik.Text = wynik.ToString("0.###");
+            }
+            catch (FormatException ex)
+            {
+                LogujBlad("Błędny format liczby. Wprowadź poprawne wartości liczbowe.", ex);
+                MessageBox.Show("Błędny format liczby! Wprowadź liczby.", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (DivideByZeroException ex)
+            {
+                LogujBlad("Próba dzielenia przez zero!", ex);
+                MessageBox.Show("Nie można dzielić przez zero!", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                LogujBlad("Nieznany błąd podczas wykonywania operacji.", ex);
+                MessageBox.Show("Wystąpił nieoczekiwany błąd.", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void LogujBlad(string wiadomosc, Exception ex)
+        {
+            string source = "KalkulatorDzielenia";
+
+            // Sprawdzenie czy źródło istnieje, jeśli nie - tworzymy je
+            if (!EventLog.SourceExists(source))
+            {
+                EventLog.CreateEventSource(source, "Application");
+            }
+
+            // Dodanie błędu do dziennika zdarzeń systemu Windows
+            EventLog.WriteEntry(source, $"{wiadomosc}\nSzczegóły błędu: {ex.Message}", EventLogEntryType.Error);
+        }
+    }
+}
