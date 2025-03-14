@@ -1,0 +1,99 @@
+using System;
+using System.Diagnostics;
+using System.Windows.Forms;
+
+namespace Kalkulator
+{
+    public partial class Form1 : Form
+    {
+        private double pierwszaLiczba;
+        private double drugaLiczba;
+        private string operacja;
+        private Stopwatch stoper;
+
+
+
+
+        public Form1()
+        {
+            // Mierzenie czasu inicjalizacji
+            stoper = Stopwatch.StartNew();
+
+            InitializeComponent();
+
+            // Sprawdzenie czasu uruchamiania
+            stoper.Stop();
+            double czasUruchamiania = stoper.ElapsedMilliseconds;
+            double progCzasu = 10; // 10ms - próg wpisu do rejestru zdarzeń
+
+            if (czasUruchamiania > progCzasu)
+            {
+                LogujZdarzenie($"Aplikacja uruchamiała się {czasUruchamiania} ms, co przekracza próg {progCzasu} ms.");
+            }
+        }
+
+        private void btnCyfra_Click(object sender, EventArgs e)
+        {
+            Button btn = sender as Button;
+            txtDisplay.Text += btn.Text;
+        }
+
+        private void btnOperator_Click(object sender, EventArgs e)
+        {
+            Button btn = sender as Button;
+            pierwszaLiczba = Convert.ToDouble(txtDisplay.Text);
+            operacja = btn.Text;
+            txtDisplay.Clear();
+        }
+
+        private void btnEquals_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                drugaLiczba = Convert.ToDouble(txtDisplay.Text);
+                double wynik = 0;
+
+                switch (operacja)
+                {
+                    case "+": wynik = pierwszaLiczba + drugaLiczba; break;
+                    case "-": wynik = pierwszaLiczba - drugaLiczba; break;
+                    case "*": wynik = pierwszaLiczba * drugaLiczba; break;
+                    case "/":
+                        if (drugaLiczba == 0)
+                        {
+                            throw new DivideByZeroException("Próba dzielenia przez zero.");
+                        }
+                        wynik = pierwszaLiczba / drugaLiczba;
+                        break;
+                }
+
+                txtDisplay.Text = wynik.ToString();
+            }
+            catch (Exception ex)
+            {
+                LogujZdarzenie($"Błąd: {ex.Message}");
+                MessageBox.Show("Wystąpił błąd!", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            txtDisplay.Clear();
+            pierwszaLiczba = 0;
+            drugaLiczba = 0;
+            operacja = "";
+        }
+
+        private void LogujZdarzenie(string wiadomosc)
+        {
+            string source = "KalkulatorApp";
+
+            if (!EventLog.SourceExists(source))
+            {
+                EventLog.CreateEventSource(source, "Application");
+            }
+
+            EventLog.WriteEntry(source, wiadomosc, EventLogEntryType.Warning);
+        }
+    }
+}
