@@ -1,0 +1,143 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using System.Windows.Forms;
+
+namespace SystemMonitorApp
+{
+    public partial class Form1 : Form
+    {
+        private PerformanceCounter cpuCounter;
+        private PerformanceCounter ramCounter;
+        private Timer monitorTimer;
+        private EventLogger eventLogger;
+        private Logger fileLogger;
+        private ConfigManager configManager;
+
+        public Form1()
+        {
+            InitializeComponent();
+            btnCloseApp.Click += btnCloseApp_Click;
+            // Inicjalizacja liczników
+            cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+
+            // Inicjalizacja loggerów
+            eventLogger = new EventLogger();
+            fileLogger = new Logger();
+            configManager = new ConfigManager();
+
+            // Konfiguracja interwału odświeżania (co 5 sekund)
+            monitorTimer = new Timer();
+            monitorTimer.Interval = 5000;
+            monitorTimer.Tick += MonitorSystem;
+            monitorTimer.Start();
+        }
+
+        private void MonitorSystem(object sender, EventArgs e)
+        {
+            float cpuUsage = cpuCounter.NextValue();
+            float availableRam = ramCounter.NextValue();
+
+            // Aktualizacja UI
+            lblCpuUsage.Text = $"CPU: {cpuUsage:F2}%";
+            lblRamUsage.Text = $"RAM: {availableRam} MB";
+
+            string logMessage = $"{DateTime.Now} - CPU: {cpuUsage:F2}% | RAM: {availableRam} MB";
+            fileLogger.LogToFile(logMessage);
+
+            // Sprawdzenie progów i logowanie zdarzeń
+            if (cpuUsage > configManager.Config.CpuThreshold)
+            {
+                string cpuWarning = $"Przekroczono limit CPU! {cpuUsage:F2}% > {configManager.Config.CpuThreshold}%";
+                eventLogger.LogEvent(cpuWarning, EventLogEntryType.Warning);
+            }
+
+            if (availableRam < configManager.Config.RamThreshold)
+            {
+                string ramWarning = $"Niski poziom RAM! {availableRam} MB < {configManager.Config.RamThreshold} MB";
+                eventLogger.LogEvent(ramWarning, EventLogEntryType.Warning);
+            }
+        }
+
+        private void btnCloseApp_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+    }
+
+    // Klasa do logowania zdarzeń systemowych
+    class EventLogger
+    {
+        private const string sourceName = "SystemMonitorApp";
+        private const string logName = "Application";
+
+        public EventLogger()
+        {
+            if (!EventLog.SourceExists(sourceName))
+            {
+                EventLog.CreateEventSource(sourceName, logName);
+            }
+        }
+
+        public void LogEvent(string message, EventLogEntryType type = EventLogEntryType.Information)
+        {
+            EventLog.WriteEntry(sourceName, message, type);
+        }
+    }
+
+    // Klasa do zapisywania logów do pliku
+    class Logger
+    {
+        private readonly string logFilePath = "system_log.txt";
+
+        public void LogToFile(string message)
+        {
+            using (StreamWriter writer = new StreamWriter(logFilePath, true))
+            {
+                writer.WriteLine(message);
+            }
+        }
+    }
+
+    // Klasa do obsługi konfiguracji użytkownika
+    class ConfigManager
+    {
+        private const string configFilePath = "config.json";
+
+        public ConfigData Config { get; private set; }
+
+        public ConfigManager()
+        {
+            LoadConfig();
+        }
+
+        public void LoadConfig()
+        {
+            if (File.Exists(configFilePath))
+            {
+                string json = File.ReadAllText(configFilePath);
+                Config = JsonSerializer.Deserialize<ConfigData>(json);
+            }
+            else
+            {
+                Config = new ConfigData { CpuThreshold = 80, RamThreshold = 500 }; // Domyślne wartości
+                SaveConfig();
+            }
+        }
+
+        public void SaveConfig()
+        {
+            string json = JsonSerializer.Serialize(Config, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(configFilePath, json);
+        }
+    }
+
+    // Klasa reprezentująca konfigurację
+    class ConfigData
+    {
+        public int CpuThreshold { get; set; }
+        public int RamThreshold { get; set; }
+    }
+}
